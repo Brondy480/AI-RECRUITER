@@ -1,20 +1,41 @@
+<<<<<<< HEAD
 # AI-RECRUITER
 app for interviewing candidates in interprises and giving feedback and final hiring decision using ai  
 
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
 
+
+
 ## Getting Started
 
-First, run the development server:
+### 1. Environment Variables
+
+Create a `.env.local` file in the root of your project and add the following environment variables. You can get these keys from their respective service dashboards.
+
+```bash
+# Supabase credentials
+NEXT_PUBLIC_SUPABASE_URL=your-supabase-project-url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
+
+# Vapi Public Key
+NEXT_PUBLIC_VAPI_PUBLIC_KEY=your-vapi-public-key
+
+# OpenAI API Key (for server-side API routes)
+OPENAI_API_KEY=your-openai-api-key
+```
+
+### 2. Install Dependencies
+
+```bash
+npm install
+```
+
+### 3. Run the Development Server
 
 ```bash
 npm run dev
 # or
 yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
