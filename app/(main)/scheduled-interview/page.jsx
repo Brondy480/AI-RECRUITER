@@ -157,7 +157,7 @@ function ScheduledInterview() {
             </div>
           ))}
         </div>
-      )}
+      ))}
 
       {/* Modal */}
       {selectedInterview && (
