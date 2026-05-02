@@ -65,7 +65,7 @@ export async function POST(req){
 
         // Race against timeout
         const completionPromise = openai.chat.completions.create({
-            model: 'deepseek/deepseek-r1-0528-qwen3-8b',
+            model: 'google/gemma-3-12b-it:free',
             messages: [
                 {
                     role: 'user',
