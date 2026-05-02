@@ -16,6 +16,17 @@ function Provider({ children }) {
         .eq("email", email)
         .single();
 
+      if (!data || error?.code === "PGRST116") {
+        const { data: newUser, error: insertError } = await supabase
+          .from("Users")
+          .insert([{ email: email, credits: 10 }])
+          .select()
+          .single();
+        if (!insertError) setUser(newUser);
+        setLoading(false);
+        return;
+      }
+
       if (error) {
         console.error("Error fetching user data:", error);
         setUser(null);
@@ -33,6 +44,14 @@ function Provider({ children }) {
         await fetchUserFromDB(session.user.email);
       } else {
         setUser(null);
+        setLoading(false);
+      }
+    });
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user?.email) {
+        fetchUserFromDB(session.user.email);
+      } else {
         setLoading(false);
       }
     });
