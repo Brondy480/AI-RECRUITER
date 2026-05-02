@@ -37,10 +37,10 @@ export async function POST(req){
         }, { status: 200 });
     }
 
-    const FINAL_PROMPT = QUESTIONS_PROMPT.replace('{{jobTitle}}',jobPosition)
-        .replace('{{jobDescription}}',jobDescription)
-        .replace('{{duration}}',duration)
-        .replace('{{type}}',type);
+    const FINAL_PROMPT = QUESTIONS_PROMPT.replaceAll('{{jobTitle}}',jobPosition)
+        .replaceAll('{{jobDescription}}',jobDescription)
+        .replaceAll('{{duration}}',duration)
+        .replaceAll('{{type}}',type);
 
     console.log("Generating questions for:", jobPosition);
 
