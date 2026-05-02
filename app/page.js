@@ -26,7 +26,7 @@ export default function Home() {
             </p>
 
             <div className="flex gap-4 mt-6">
-             <Link href="/dashboard">
+              <Link href="/auth">
                 <Button className="bg-black text-white hover:bg-gray-800 px-6 py-3 rounded-lg font-semibold shadow-lg">
                   Get Started
                 </Button>

@@ -1,5 +1,5 @@
 import { Loader2Icon } from 'lucide-react';
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
 import axios from 'axios';
 import { toast } from 'sonner';
 import QuestionListContainer from './QuestionListContainer';
@@ -7,206 +7,105 @@ import supabase from '@/service/supabaseClient';
 import { useUser } from '@/app/provider';
 import { v4 as uuidv4 } from 'uuid';
 
-function QuestionList({formData,onCreateLink}) {
-   const [loading, setLoading] = useState(true);
-   const [questionList, setQuestionList] = useState([]);
-   const [finishing, setFinishing] = useState(false);
-   const {user} = useUser();
-       
-   useEffect(() => {
-       if(formData){
-          GenerateQuestionList();
-      }
-   }, [formData])
+function QuestionList({ formData, onCreateLink }) {
+    const [loading, setLoading] = useState(false);
+    const [questionList, setQuestionList] = useState([]);
+    const [finishing, setFinishing] = useState(false);
+    const { user } = useUser();
 
- const onFinish = async () => {
-  setFinishing(true);
-  let interview_id = null; // ✅ declare it here so it's always available
+    // ✅ USER-TRIGGERED GENERATION
+    const GenerateQuestionList = async () => {
+        if (!formData?.jobPosition || !formData?.jobDescription) {
+            toast("Missing job details");
+            return;
+        }
 
-  try {
-    const { data: { user: currentUser }, error: authError } = await supabase.auth.getUser();
+        setLoading(true);
 
-    if (!questionList || questionList.length === 0) {
-      toast("No questions to save. Please generate questions first.");
-      setFinishing(false);
-      return;
-    }
+        try {
+            const result = await axios.post('/api/ai-model', { ...formData });
 
-    if (!currentUser?.email) {
-      toast("Please log in to save your interview questions.");
-      setFinishing(false);
-      return;
-    }
+            const content = result.data?.message?.content;
+            if (!content) {
+                console.error("Raw API response:", result.data);
+                throw new Error("No content received from API");
+            }
 
-    interview_id = uuidv4(); // ✅ assign inside try
+            let cleaned = content.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
+            let parsed = JSON.parse(cleaned);
 
-    const insertData = {
-      ...formData,
-      questionList: questionList,
-      userEmail: currentUser.email,
-      interview_id: interview_id,
+            const questions = Array.isArray(parsed)
+                ? parsed
+                : parsed.interviewQuestions || [];
+
+            if (!questions.length) throw new Error("No questions generated");
+
+            setQuestionList(questions);
+            toast("Questions generated successfully");
+        } catch (err) {
+            console.error(err);
+            toast("Failed to generate questions");
+        } finally {
+            setLoading(false);
+        }
     };
 
-    const { data, error } = await supabase
-      .from('Interviews')
-      .insert([insertData])
-      .select();
-      // update user credit
+    const onFinish = async () => {
+        if (!questionList.length) return;
 
-      
-const userUpdate = await supabase
-  .from('interview_feedback')
-  .update({ credits: Number(user?.credits)-1 })
-  .eq('email', user?.email)
-  .select()
+        setFinishing(true);
+        const interview_id = uuidv4();
 
-  console.log(userUpdate)
-          
+        try {
+            const { data: { user: currentUser } } = await supabase.auth.getUser();
 
-    if (error) {
-      console.error('Supabase error:', error);
-      toast(`Database error: ${error.message}`);
-      setFinishing(false);
-      return;
-    }
+            await supabase.from('Interviews').insert([{
+                ...formData,
+                questionList,
+                interview_id,
+                userEmail: currentUser.email
+            }]);
 
-    toast("Interview questions saved successfully!");
-  } catch (error) {
-    console.error('Unexpected error:', error);
-    toast("An unexpected error occurred. Please try again.");
-  } finally {
-    setFinishing(false);
-    if (interview_id) {
-      onCreateLink(interview_id); // ✅ only call if we actually created one
-    }
-  }
-};
+            await supabase
+                .from('Users')
+                .update({ credits: Number(user.credits) - 1 })
+                .eq('email', currentUser.email);
 
+            toast("Interview created");
+            onCreateLink(interview_id);
+        } catch (e) {
+            toast("Failed to save interview");
+            console.error(e);
+        } finally {
+            setFinishing(false);
+        }
+    };
 
-   const GenerateQuestionList = async () => {
-       setLoading(true)
-       let result = null;
-       
-       try {
-           result = await axios.post('/api/ai-model', {
-               ...formData
-           })
-           console.log(result.data)
-           
-           // Check if result.data exists and has the message structure
-           if (!result.data || !result.data.message || !result.data.message.content) {
-               throw new Error('No content received from API');
-           }
-           
-           // Get the content from the response
-           let content = result.data.message.content;
-           
-           console.log('Original content:', content);
-           
-           // More robust cleaning of markdown code blocks
-           content = content.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
-           
-           // Handle different possible formats
-           if (content.startsWith('interviewQuestions=')) {
-               content = `{"interviewQuestions":${content.substring('interviewQuestions='.length)}}`;
-           } else if (content.includes('"interviewQuestions"') && !content.startsWith('{')) {
-               content = `{${content}}`;
-           }
-           
-           console.log('Cleaned content:', content);
-           console.log('Content length:', content.length);
-           
-           // Validate that we have complete JSON before parsing
-           if (!content || content.length < 10) {
-               throw new Error('Content too short or empty after cleaning');
-           }
-           
-           // Check if content looks like valid JSON structure
-           if (!content.includes('{') && !content.includes('[')) {
-               throw new Error('Content does not appear to be valid JSON structure');
-           }
+    return (
+        <div className="p-6">
+            <button
+                onClick={GenerateQuestionList}
+                className="mb-6 bg-blue-500 text-white px-6 py-3 rounded-lg"
+                disabled={loading}
+            >
+                {loading ? <Loader2Icon className="animate-spin" /> : "Generate Questions"}
+            </button>
 
-           // Parse the JSON with error handling
-           let parsedContent;
-           try {
-               parsedContent = JSON.parse(content);
-           } catch (parseError) {
-               console.log('First JSON parse failed:', parseError);
-               console.log('Attempting to fix common JSON issues...');
-               
-               // Try to fix common JSON issues
-               let fixedContent = content
-                   .replace(/,\s*}/g, '}')  // Remove trailing commas before }
-                   .replace(/,\s*]/g, ']')  // Remove trailing commas before ]
-                   .replace(/'/g, '"')      // Replace single quotes with double quotes
-                   .replace(/\n/g, ' ')     // Replace newlines with spaces
-                   .trim();
-               
-               try {
-                   parsedContent = JSON.parse(fixedContent);
-                   console.log('JSON parsing succeeded after fixes');
-               } catch (secondParseError) {
-                   console.log('Second JSON parse also failed:', secondParseError);
-                   console.log('Raw content that failed:', content);
-                   throw new Error(`JSON parsing failed: ${secondParseError.message}`);
-               }
-           }
-           
-           // Handle both formats: direct array or object with interviewQuestions property
-           let questions;
-           if (Array.isArray(parsedContent)) {
-               // Direct array format
-               questions = parsedContent;
-           } else if (parsedContent.interviewQuestions && Array.isArray(parsedContent.interviewQuestions)) {
-               // Object with interviewQuestions property
-               questions = parsedContent.interviewQuestions;
-           } else {
-               throw new Error('Invalid response format: expected array or object with interviewQuestions');
-           }
-           
-           // Set the questions list
-           setQuestionList(questions);
-           setLoading(false)
-           
-       } catch (error) {
-           toast("Server error, try again")
-           setLoading(false)
-           console.log('Error:', error)
-           console.log('Raw content:', result?.data?.content)
-       }
-   }
+            {questionList.length > 0 && (
+                <QuestionListContainer questionsList={questionList} />
+            )}
 
-   return (
-       <>
-           {loading && (
-               <div>
-                   <Loader2Icon className='animate-spin'/>
-                   <div className='p-5 bg-blue-50 rounded-xl border border-blue-200 flex gap-5 items-center'>
-                       <h2 className='font-bold'>Generate Interview questions</h2>
-                       <p className='text-gray-500'>Our AI is crafting personalised questions based on your job position</p>
-                   </div>
-               </div>
-           )}
-           
-           {questionList && questionList.length > 0 && (
-               <div>
-                   <QuestionListContainer questionsList={questionList}/>
-               </div>
-           )}
-           
-           <div className='flex justify-end'>
-               <button 
-                   className={`mt-10 flex w-[200px] h-20 text-bold rounded-xl justify-center items-center ${
-                       finishing ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-400 hover:bg-blue-500'
-                   }`}
-                   onClick={onFinish}
-                   disabled={finishing || !questionList?.length}
-               >
-                   {finishing ? <Loader2Icon className='animate-spin w-4 h-4' /> : 'Create interview link and finish'}
-               </button>
-           </div>
-       </>
-   )
+            <div className="flex justify-end mt-10">
+                <button
+                    onClick={onFinish}
+                    disabled={finishing || !questionList.length}
+                    className="bg-green-600 text-white px-6 py-4 rounded-xl"
+                >
+                    {finishing ? "Saving..." : "Create Interview Link & Finish"}
+                </button>
+            </div>
+        </div>
+    );
 }
 
 export default QuestionList;

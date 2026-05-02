@@ -1,42 +1,68 @@
 "use client";
+
 import { UserDetailContext } from "@/Context/UserDetailContext";
 import supabase from "@/service/supabaseClient";
 import React, { useEffect, useState, useContext } from "react";
 
 function Provider({ children }) {
-  const [currentUser, setCurrentUser] = useState(null);
+  const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // ⭐ SIMPLE: Just get the session ONCE and that's it
-    const getUser = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (session?.user) {
-        // Get user from database
-        const { data: users } = await supabase
-          .from("Users")
-          .select("*")
-          .eq("email", session.user.email);
-          
-        if (users && users.length > 0) {
-          setCurrentUser(users[0]);
-        }
+    const fetchUserFromDB = async (email) => {
+      const { data, error } = await supabase
+        .from("Users")
+        .select("*")
+        .eq("email", email)
+        .single(); // ✅ VERY IMPORTANT
+
+      if (error) {
+        console.error("Error fetching user data:", error);
+        setUser(null);
+      } else {
+        setUser(data);
       }
-      
-      setLoading(false); // ⭐ Set to false ONCE and never touch it again
+
+      setLoading(false);
     };
 
-    getUser();
-    
-    // ⭐ NO AUTH LISTENER AT ALL - this is what's causing the problem
-    
-  }, []); // ⭐ Empty dependency - runs ONCE only
+    const getSession = async () => {
+      const {
+        data: { session },
+        error,
+      } = await supabase.auth.getSession();
+
+      if (error) {
+        console.error("Session error:", error);
+        setLoading(false);
+        return;
+      }
+
+      if (session?.user?.email) {
+        await fetchUserFromDB(session.user.email);
+      } else {
+        setUser(null);
+        setLoading(false);
+      }
+    };
+
+    getSession();
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      if (session?.user?.email) {
+        await fetchUserFromDB(session.user.email);
+      } else {
+        setUser(null);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   return (
-    <UserDetailContext.Provider
-      value={{ user: currentUser, setUser: setCurrentUser, loading }}
-    >
+    <UserDetailContext.Provider value={{ user, setUser, loading }}>
       {children}
     </UserDetailContext.Provider>
   );

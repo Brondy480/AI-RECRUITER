@@ -14,12 +14,26 @@ export default function AllInterviews() {
   useEffect(() => {
     if (loading || !user?.email) return;
     
-    supabase
-      .from("Interviews")
-      .select("*")
-      .eq("userEmail", user.email)
-      .order("created_at", { ascending: false })
-      .then(({ data }) => setInterviews(data || []));
+    const fetchInterviews = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("Interviews")
+          .select("*")
+          .eq("userEmail", user.email)
+          .order("created_at", { ascending: false });
+          
+        if (error) {
+          console.error("Error fetching interviews:", error);
+          return;
+        }
+        
+        setInterviews(data || []);
+      } catch (err) {
+        console.error("Failed to fetch interviews:", err);
+      }
+    };
+    
+    fetchInterviews();
   }, [user?.email, loading]);
 
   const filtered = interviews.filter(i => 

@@ -44,20 +44,28 @@ function Interview() {
   .from('Interviews')
   .select("jobPosition,jobDescription,duration,type")
   .eq('interview_id', interview_id)
-        setInterviewData(Interviews[0]);
-setLoading(false);
+        
+        if (error) {
+          console.error("Error fetching interview:", error);
+          toast.error("Failed to load interview details");
+          setLoading(false);
+          return;
+        }
 
-  if(Interviews?.length==0){
-    toast('interview link incorect')
-    return 
-  }
-  setLoading(false);
+        if(!Interviews || Interviews.length === 0){
+          toast.error('Interview not found. Please check the link.');
+          setLoading(false);
+          return;
+        }
+
+        setInterviewData(Interviews[0]);
+        setLoading(false);
   
     }  
     catch (error) {
         setLoading(false);
-        console.log(error);
-        toast('interview link incorect')
+        console.error("Unexpected error:", error);
+        toast.error('Failed to load interview. Please try again.');
             
         }
 
@@ -66,20 +74,43 @@ setLoading(false);
   const onjoinInterview = async() =>{
     setLoading(true);
 
-    let {data : Interviews , error} = await supabase
-    .from("Interviews")
-    .select('*')
-    .eq('interview_id',interview_id);
+    try {
+      if (!userName || !userEmail) {
+        toast.error("Please enter your name and email");
+        setLoading(false);
+        return;
+      }
 
-    console.log(Interviews[0])
-    setInterviewInfo({
-        userName : userName,
-        userEmail : userEmail,
-       interviewData : Interviews[0],
-       
-    });
-    router.push('/interview/'+interview_id+'/start');
-    setLoading(false);
+      let {data : Interviews , error} = await supabase
+      .from("Interviews")
+      .select('*')
+      .eq('interview_id',interview_id);
+
+      if (error) {
+        console.error("Error fetching interview data:", error);
+        toast.error("Failed to join interview");
+        setLoading(false);
+        return;
+      }
+
+      if (!Interviews || Interviews.length === 0) {
+        toast.error("Interview not found");
+        setLoading(false);
+        return;
+      }
+
+      setInterviewInfo({
+          userName : userName,
+          userEmail : userEmail,
+         interviewData : Interviews[0],
+      });
+      router.push('/interview/'+interview_id+'/start');
+    } catch (err) {
+      console.error("Error joining interview:", err);
+      toast.error("Failed to join interview");
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (

@@ -8,13 +8,17 @@ function ScheduledInterview() {
   const [interviewList, setInterviewList] = useState([]);
   const [selectedInterview, setSelectedInterview] = useState(null);
 
+  const [isLoading, setIsLoading] = useState(true);
+  
   useEffect(() => {
     if (loading) return;
     if (!user?.email) return;
     GetInterviewList();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.email, loading]);
-
+  
   const GetInterviewList = async () => {
+    setIsLoading(true);
     try {
       const { data, error } = await supabase
         .from("Interviews")
@@ -24,6 +28,7 @@ function ScheduledInterview() {
           duration,
           type,
           interview_id,
+          created_at,
           interview_feedback (
             id,
             useremail,
@@ -43,7 +48,9 @@ function ScheduledInterview() {
       }
       setInterviewList(data || []);
     } catch (err) {
-      console.error(err);
+      console.error("Failed to fetch interviews:", err);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -89,9 +96,23 @@ function ScheduledInterview() {
         Interview List with Feedback
       </h2>
 
-      {interviewList.length === 0 ? (
-        <p className="text-gray-500 text-lg">No interviews found.</p>
+      {/* Loading state */}
+      {isLoading && (
+        <div className="flex items-center justify-center min-h-[300px]">
+          <div className="flex flex-col items-center space-y-4">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+            <p className="text-gray-600 font-medium">Loading interviews...</p>
+          </div>
+        </div>
+      )}
+
+      {!isLoading && interviewList.length === 0 ? (
+        <div className="text-center py-12">
+          <h2 className="text-2xl font-bold text-gray-700 mb-4">No interviews found</h2>
+          <p className="text-gray-500 mb-6">You haven't created any interviews yet.</p>
+        </div>
       ) : (
+        !isLoading && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {interviewList.map((interview) => (
             <div
