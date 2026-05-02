@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep -n \"supabase\\\\|\\\\.from\\\\|\\\\.insert\\\\|\\\\.update\" app/interview/[interview_id]/start/page.jsx)",
+      "Bash(wc -l app/interview/[interview_id]/start/page.jsx)",
+      "Bash(xargs wc:*)"
+    ]
+  }
+}

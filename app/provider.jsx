@@ -14,7 +14,7 @@ function Provider({ children }) {
         .from("Users")
         .select("*")
         .eq("email", email)
-        .single(); // ✅ VERY IMPORTANT
+        .single();
 
       if (error) {
         console.error("Error fetching user data:", error);
@@ -26,28 +26,6 @@ function Provider({ children }) {
       setLoading(false);
     };
 
-    const getSession = async () => {
-      const {
-        data: { session },
-        error,
-      } = await supabase.auth.getSession();
-
-      if (error) {
-        console.error("Session error:", error);
-        setLoading(false);
-        return;
-      }
-
-      if (session?.user?.email) {
-        await fetchUserFromDB(session.user.email);
-      } else {
-        setUser(null);
-        setLoading(false);
-      }
-    };
-
-    getSession();
-
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (_event, session) => {
@@ -55,6 +33,7 @@ function Provider({ children }) {
         await fetchUserFromDB(session.user.email);
       } else {
         setUser(null);
+        setLoading(false);
       }
     });
 
