@@ -5,10 +5,9 @@ import { SidebarProvider } from '@/components/ui/sidebar';
 
 function DashboardLayout({children}) {
   return (
-    <div>
     <SidebarProvider>
       <DashboardProvider>
-        <div className='flex w-full'>
+        <div className='flex w-full min-h-screen'>
           <AppSidebar/>
           <div className='flex-1 min-w-0 overflow-auto'>
             {children}
@@ -16,7 +15,6 @@ function DashboardLayout({children}) {
         </div>
       </DashboardProvider>
     </SidebarProvider>
-    </div>
   )
 }
 

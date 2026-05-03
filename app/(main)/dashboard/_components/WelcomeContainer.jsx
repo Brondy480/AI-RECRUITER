@@ -2,34 +2,42 @@
 import React from "react";
 import { useUser } from "@/app/provider";
 import Image from "next/image";
-import { Coins } from "lucide-react";
+import { Coins, LayoutDashboard } from "lucide-react";
 
 function WelcomeContainer() {
   const { user } = useUser();
 
   return (
-    <div className="bg-gradient-to-r from-gray-50 to-gray-100 p-6 rounded-2xl flex justify-between items-center w-full">
-      <div>
-        <h2 className="text-lg font-bold">Welcome back, {user?.name}</h2>
-        <p className="text-gray-500 text-sm mt-0.5">
-          AI Driven Interview Assistant
-        </p>
-        <div className="flex items-center gap-1.5 mt-3">
-          <Coins className="w-4 h-4 text-amber-500" />
-          <span className="text-sm font-medium text-gray-700">
-            {user?.credits ?? 0} credits remaining
-          </span>
+    <div className="w-full bg-gradient-to-r from-blue-600 to-indigo-700 rounded-xl p-6 flex items-center justify-between gap-4 text-white">
+      <div className="flex items-center gap-4 min-w-0">
+        {user?.picture ? (
+          <Image
+            src={user.picture}
+            width={56}
+            height={56}
+            alt="Profile"
+            className="rounded-full border-2 border-white/40 shrink-0"
+          />
+        ) : (
+          <div className="w-14 h-14 rounded-full bg-white/20 flex items-center justify-center shrink-0">
+            <LayoutDashboard className="w-6 h-6 text-white" />
+          </div>
+        )}
+        <div className="min-w-0">
+          <h2 className="text-xl font-bold truncate">
+            Welcome back, {user?.name}
+          </h2>
+          <p className="text-blue-100 text-sm mt-0.5">
+            AI-Driven Interview Assistant
+          </p>
         </div>
       </div>
-      {user?.picture && (
-        <Image
-          src={user.picture}
-          width={64}
-          height={64}
-          alt="Profile"
-          className="rounded-full"
-        />
-      )}
+
+      <div className="bg-white/20 rounded-xl px-5 py-3 text-center shrink-0">
+        <Coins className="w-5 h-5 text-amber-300 mx-auto mb-1" />
+        <div className="text-2xl font-bold">{user?.credits ?? 0}</div>
+        <div className="text-xs text-blue-100">Credits</div>
+      </div>
     </div>
   );
 }
