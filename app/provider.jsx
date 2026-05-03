@@ -9,7 +9,8 @@ function Provider({ children }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchUserFromDB = async (email) => {
+    const fetchUserFromDB = async (email, authUser) => {
+      const meta = authUser?.user_metadata ?? {};
       const { data, error } = await supabase
         .from("Users")
         .select("*")
@@ -22,7 +23,7 @@ function Provider({ children }) {
           .insert([{ email: email, credits: 10 }])
           .select()
           .single();
-        if (!insertError) setUser(newUser);
+        if (!insertError) setUser({ ...newUser, name: meta.full_name, picture: meta.avatar_url });
         setLoading(false);
         return;
       }
@@ -31,7 +32,7 @@ function Provider({ children }) {
         console.error("Error fetching user data:", error);
         setUser(null);
       } else {
-        setUser(data);
+        setUser({ ...data, name: meta.full_name, picture: meta.avatar_url });
       }
 
       setLoading(false);
@@ -41,7 +42,7 @@ function Provider({ children }) {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (_event, session) => {
       if (session?.user?.email) {
-        await fetchUserFromDB(session.user.email);
+        await fetchUserFromDB(session.user.email, session.user);
       } else {
         setUser(null);
         setLoading(false);
@@ -50,7 +51,7 @@ function Provider({ children }) {
 
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session?.user?.email) {
-        fetchUserFromDB(session.user.email);
+        fetchUserFromDB(session.user.email, session.user);
       } else {
         setLoading(false);
       }

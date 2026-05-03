@@ -1,18 +1,18 @@
 import React from 'react'
 import DashboardProvider from './provider';
 import AppSidebar from './_component/AppSidebar';
-import { SidebarProvider } from '@/components/ui/sidebar';
+import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 
-function DashboardLayout({children}) {
+function DashboardLayout({ children }) {
   return (
     <SidebarProvider>
       <DashboardProvider>
-        <div className='flex w-full min-h-screen'>
-          <AppSidebar/>
-          <div className='flex-1 min-w-0 overflow-auto'>
+        <AppSidebar />
+        <SidebarInset>
+          <div className="w-full min-h-screen bg-gray-50">
             {children}
           </div>
-        </div>
+        </SidebarInset>
       </DashboardProvider>
     </SidebarProvider>
   )
