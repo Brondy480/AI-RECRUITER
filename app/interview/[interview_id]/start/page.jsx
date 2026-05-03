@@ -1,7 +1,7 @@
 "use client"
 import { InterviewDataContext } from '@/Context/InterviewDataContext'
 import { Phone, Timer } from 'lucide-react'
-import React, { useContext, useEffect, useState } from 'react'
+import React, { useContext, useEffect, useRef, useState } from 'react'
 import Image from 'next/image'
 import { Mic } from 'lucide-react'
 import AlertConfirmation from './_components/AlertConfirmation'
@@ -14,6 +14,7 @@ function StartInterview() {
     const [activeUser, setActiveUser] = useState(false);
     const [conversation, setConversation] = useState();
     const [vapi] = useState(() => getVapiInstance()); // Use singleton
+    const conversationRef = useRef([]);
 
     // Setup all event listeners once
     useEffect(() => {
@@ -60,6 +61,7 @@ function StartInterview() {
             console.log("📨 Message received:", message);
             if (message?.conversation) {
                 setConversation(message.conversation);
+                conversationRef.current = message.conversation;
             }
         };
 
@@ -118,7 +120,7 @@ function StartInterview() {
             firstMessage: `Hi ${interviewInfo?.userName}, how are you? Ready for your interview on ${interviewInfo?.interviewData?.jobPosition}?`,
             model: {
                 provider: "openrouter",
-                model: "meta-llama/llama-3.1-8b-instruct:free", // Best free model - high quality
+                model: "google/gemma-3-12b-it:free",
                 messages: [
                     {
                         role: "system",
@@ -170,15 +172,15 @@ Key Guidelines:
 
     // Generate AI feedback
     const GenerateFeedback = async () => {
-        if (!conversation || conversation.length === 0) {
+        if (!conversationRef.current || conversationRef.current.length === 0) {
             console.log("No conversation to generate feedback from");
             return;
         }
 
         try {
-            console.log("Generating feedback for conversation:", conversation);
+            console.log("Generating feedback for conversation:", conversationRef.current);
             const result = await axios.post('/api/ai-feedback', {
-                conversation: conversation
+                conversation: conversationRef.current
             });
             
             console.log("Feedback result:", result?.data);
