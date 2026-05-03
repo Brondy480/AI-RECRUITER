@@ -52,18 +52,27 @@ export async function POST(req) {
       apiKey: process.env.OPENROUTER_API_KEY,
     });
 
-    // Race against timeout
-    const completionPromise = openai.chat.completions.create({
-      model: "google/gemma-3-12b-it:free",
-      messages: [
-        {
-          role: "user",
-          content: FINAL_PROMPT,
-        },
-      ],
-    });
+    // Race against timeout with retry on 429
+    const makeRequest = async () => {
+      try {
+        return await openai.chat.completions.create({
+          model: "meta-llama/llama-3.3-70b-instruct:free",
+          messages: [{ role: "user", content: FINAL_PROMPT }],
+        });
+      } catch (e) {
+        if (e.status === 429) {
+          console.log("Rate limited, retrying in 3s...");
+          await new Promise(r => setTimeout(r, 3000));
+          return await openai.chat.completions.create({
+            model: "meta-llama/llama-3.3-70b-instruct:free",
+            messages: [{ role: "user", content: FINAL_PROMPT }],
+          });
+        }
+        throw e;
+      }
+    };
 
-    const completion = await Promise.race([completionPromise, timeoutPromise]);
+    const completion = await Promise.race([makeRequest(), timeoutPromise]);
     return NextResponse.json({
       message: completion.choices[0].message,
     });
