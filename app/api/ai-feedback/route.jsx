@@ -44,7 +44,7 @@ export async function POST(req) {
 
     // Set timeout to prevent hanging requests
     const timeoutPromise = new Promise((_, reject) => 
-      setTimeout(() => reject(new Error("Request timed out")), 15000)
+      setTimeout(() => reject(new Error("Request timed out")), 30000)
     );
 
     const openai = new OpenAI({

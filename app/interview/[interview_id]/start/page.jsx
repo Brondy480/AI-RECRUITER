@@ -119,8 +119,8 @@ function StartInterview() {
             name: "AI Recruiter",
             firstMessage: `Hi ${interviewInfo?.userName}, how are you? Ready for your interview on ${interviewInfo?.interviewData?.jobPosition}?`,
             model: {
-                provider: "openrouter",
-                model: "google/gemma-3-12b-it:free",
+                provider: "anthropic",
+                model: "claude-haiku-4-5-20251001",
                 messages: [
                     {
                         role: "system",
