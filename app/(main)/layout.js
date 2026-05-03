@@ -5,13 +5,11 @@ import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 
 function DashboardLayout({ children }) {
   return (
-    <SidebarProvider>
+    <SidebarProvider style={{ '--sidebar-width': '260px' }}>
       <DashboardProvider>
         <AppSidebar />
-        <SidebarInset>
-          <div className="w-full min-h-screen bg-gray-50">
-            {children}
-          </div>
+        <SidebarInset className="flex-1 min-w-0">
+          {children}
         </SidebarInset>
       </DashboardProvider>
     </SidebarProvider>
