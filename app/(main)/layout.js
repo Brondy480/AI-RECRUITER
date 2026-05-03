@@ -7,15 +7,15 @@ function DashboardLayout({children}) {
   return (
     <div>
     <SidebarProvider>
-  
-    <DashboardProvider>
-     <AppSidebar/>
-    <div className=''>
-     {children}
-     </div>
-    </DashboardProvider>
+      <DashboardProvider>
+        <div className='flex w-full'>
+          <AppSidebar/>
+          <div className='flex-1 min-w-0 overflow-auto'>
+            {children}
+          </div>
+        </div>
+      </DashboardProvider>
     </SidebarProvider>
-     
     </div>
   )
 }
